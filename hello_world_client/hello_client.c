@@ -33,10 +33,11 @@ int main(int argc, char* argv[])
     if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == -1)
 	error_handling("connect() error!");
 
-    message[MESSAGE_MAX_LENTH - 1] = '\0';
     str_len = read(sock, message, MESSAGE_MAX_LENTH - 1);
     if (str_len == -1)
 	error_handling("read() error!");
+    else
+	message[str_len] = '\0';
 
     printf("Message from server : %s \n", message);
     close(sock);

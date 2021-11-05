@@ -43,9 +43,7 @@ int main(int argc, char *argv[])
     if (clnt_sock == -1)
 	error_handling("accept() error");
 
-    printf("sizeof message: %d\n", sizeof(message));
-
-    write(clnt_sock, message, sizeof(message));
+    write(clnt_sock, message, sizeof(message) - 1);
 
     close(clnt_sock);
     close(serv_sock);
