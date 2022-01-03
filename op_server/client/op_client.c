@@ -6,21 +6,26 @@
 #include <sys/socket.h>
 
 #define BUF_SIZE 1024
+#define RLT_SIZE 4
+#define OPSZ 4
 void error_handling(char *message);
 
 int main(int argc, char *argv[])
 {
+	int sock;
+	char opmsg[BUF_SIZE];
+	int result, opnd_cnt;
+	struct sockaddr_in serv_addr;
+
 	if (argc != 3) {
 		printf("Usage : %s <IP> <port>\n", argv[0]);
 		exit(1);
 	}
 
-	int sock;
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock == -1)
 		error_handling("socket() error");
 
-	struct sockaddr_in serv_addr;
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = inet_addr(argv[1]);
@@ -31,21 +36,22 @@ int main(int argc, char *argv[])
 	else
 		puts("Connected...........");
 
-	char message[BUF_SIZE];
-	int str_len;
-	while (1)
+	fputs("Operand count: ", stdout);
+	scanf("%d", &opnd_cnt);
+	opmsg[0] = (char)opnd_cnt;
+
+	for (int i = 0; i < opnd_cnt; i++)
 	{
-		fputs("Input message(Q to quit): ", stdout);
-		fgets(message, BUF_SIZE, stdin);
-
-		if (!strcmp(message, "q\n") || !strcmp(message, "Q\n"))
-			break;
-
-		write(sock, message, strlen(message));
-		str_len = read(sock, message, BUF_SIZE - 1);
-		message[str_len] = 0;
-		printf("Message from server: %s\n", message);
+		printf("Operand %d ", i + 1);
+		scanf("%d", (int*)&opmsg[i * OPSZ + 1]);
 	}
+	fgetc(stdin); // needed. why?
+	fputs("Operator: ", stdout);
+	scanf("%c", &opmsg[opnd_cnt * OPSZ + 1]);
+	write(sock, opmsg, opnd_cnt * OPSZ + 2);
+	read(sock, &result, RLT_SIZE);
+
+	printf("Operation result: %d \n", result);
 	close(sock);
 	return 0;
 }
