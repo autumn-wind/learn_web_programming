@@ -49,15 +49,15 @@ int main(int argc, char *argv[])
 			printf("Connected client %d \n", i + 1);
 
 		opnd_cnt = 0;
-		read(clnt_sock, &opnd_cnt, 1); // low byte to low addr, but how about big-endian?
+		read(clnt_sock, &opnd_cnt, 1); // TCP will automatically handle byte-order when transforming data
 
 		recv_len = 0;
-		while ((opnd_cnt * OPSZ + 1) > recv_len)
+		while ((opnd_cnt * OPSZ + 1) > recv_len) // doesn't handle BUF_SIZE is not enough edge case
 		{
-			recv_cnt = read(clnt_sock, &opinfo[recv_len], BUF_SIZE - 1);
+			recv_cnt = read(clnt_sock, &opinfo[recv_len], BUF_SIZE - 1 - recv_len);
 			recv_len += recv_cnt;
 		}
-		result = calculate(opnd_cnt, (int*)opinfo, opinfo[opnd_cnt * OPSZ]);
+		result = calculate(opnd_cnt, (int*)opinfo, opinfo[recv_len - 1]);
 		write(clnt_sock, &result, sizeof(result));
 		close(clnt_sock);
 	}
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 int calculate(int opnum, int opnds[], char op)
 {
 	int result = opnds[0];
-	switch (op)
+	switch (op) // no default handler
 	{
 		case '+':
 			for (int i = 1; i < opnum; i++) result += opnds[i];
