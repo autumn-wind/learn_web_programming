@@ -7,6 +7,11 @@
 
 #define BUF_SIZE 1024
 #define FILE_NAME_MAX_LENGTH 256
+#define SIZE_OF_INT 4
+#define SIZE_OF_SIZE_T 8
+
+const char *mock_file_content = "abcd";
+
 void error_handling(char *message);
 
 int main(int argc, char *argv[])
@@ -43,18 +48,30 @@ int main(int argc, char *argv[])
 		printf("Connected client\n");
 
 	int file_name_length;
-	read(clnt_sock, &file_name_length, 4); 
+	read(clnt_sock, &file_name_length, SIZE_OF_INT);  // receive file name length from client
 
 	char file_name[FILE_NAME_MAX_LENGTH];
 	int recv_len = 0;
 	while (recv_len < file_name_length) 
 	{
-		int recv_cnt = read(clnt_sock, file_name + recv_len, FILE_NAME_MAX_LENGTH - 1 - recv_len);
+		int recv_cnt = read(clnt_sock, file_name + recv_len, FILE_NAME_MAX_LENGTH - 1 - recv_len); // receive file name
 		recv_len += recv_cnt;
 	}
+	file_name[file_name_length] = '\0';
 	printf("Required file %s by client\n", file_name);
 
-	/*write(clnt_sock, &result, sizeof(result));*/
+	if (strcmp(file_name, "mock_file.txt")) {
+		printf("No required file\n");
+	}
+	else {
+		printf("Found required file, file content: %s\n", mock_file_content);
+		char resp[BUF_SIZE];
+		size_t file_content_len = sizeof(mock_file_content);
+		*(size_t*)resp = file_content_len;
+		memcpy(resp + SIZE_OF_SIZE_T, mock_file_content, file_content_len);
+		write(clnt_sock, resp, SIZE_OF_SIZE_T + file_content_len); // send | file content length + file content | to client
+	}
+
 	close(clnt_sock);
 	close(serv_sock);
 	return 0;

@@ -7,6 +7,9 @@
 
 #define BUF_SIZE 1024
 #define FILE_NAME_MAX_LENGTH 256
+#define SIZE_OF_INT 4
+#define SIZE_OF_SIZE_T 8
+
 void error_handling(char *message);
 
 int main(int argc, char *argv[])
@@ -39,18 +42,23 @@ int main(int argc, char *argv[])
 	scanf("%s", file_name);
 	int file_name_length = strlen(file_name);
 	*(int*)buf = file_name_length;
-	memcpy(buf + 4, file_name, file_name_length);
-	write(sock, buf, 4 + file_name_length);
+	memcpy(buf + SIZE_OF_INT, file_name, file_name_length);
+	write(sock, buf, SIZE_OF_INT + file_name_length); // send | file name length (4 bytes) + file name | to server
 
 	size_t file_content_length = 0;
-	read(sock, &file_content_length, 8);
-	int recv_len = 0;
-	while (recv_len < file_content_length) {
-		int recv_cnt = read(sock, buf + recv_len, BUF_SIZE - recv_len - 1);
-		recv_len += recv_cnt;
+	read(sock, &file_content_length, SIZE_OF_SIZE_T); // receive file content length
+	if (file_content_length == 0) {
+		printf("No file received\n");
 	}
-	buf[recv_len] = '\0';
-	printf("The file content from server: %s\n", buf);
+	else {
+		int recv_len = 0;
+		while (recv_len < file_content_length) {
+			int recv_cnt = read(sock, buf + recv_len, BUF_SIZE - recv_len - 1); // receive file content
+			recv_len += recv_cnt;
+		}
+		buf[recv_len] = '\0';
+		printf("The file content from server: %s\n", buf);
+	}
 	close(sock);
 	return 0;
 }
