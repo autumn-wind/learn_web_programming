@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<stdbool.h>
 #include<string.h>
 #include<unistd.h>
 #include<arpa/inet.h>
@@ -34,9 +35,24 @@ int main(int argc, char *argv[])
 	fwrite((void*)buf, 1, read_cnt, fp);
 
     puts("Received file data");
-    write(sd, ENDING_MSG, sizeof(ENDING_MSG));
+    while (true)
+    {
+	puts("pre send ENDING_MSG");
+        int write_cnt = write(sd, ENDING_MSG, sizeof(ENDING_MSG));
+	puts("post send ENDING_MSG");
+	if (write_cnt > 0)
+	{
+	    printf("send \"%s\" to server\n", ENDING_MSG);
+	    break;
+	}
+	else
+	{
+	    printf("fail to send \"%s\" to server\n", ENDING_MSG);
+	}
+    }
 
     fclose(fp);
     close(sd);
+    puts("exit normally");
     return 0;
 }
