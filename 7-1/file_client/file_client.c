@@ -8,6 +8,7 @@
 
 #define BUF_SIZE 30
 #define ENDING_MSG "Thank you"
+#define FILE_NAME "received.dat"
 void error_handling(char *message);
 
 int main(int argc, char *argv[])
@@ -18,8 +19,10 @@ int main(int argc, char *argv[])
 	exit(1);
     }
 
-    FILE *fp = fopen("received.dat", "wb");
+    FILE *fp = fopen(FILE_NAME, "wb");
     int sd = socket(PF_INET, SOCK_STREAM, 0);
+    if (sd == -1)
+	error_handling("socket() error");
 
     struct sockaddr_in serv_adr;
     memset(&serv_adr, 0, sizeof(serv_adr));
@@ -27,32 +30,25 @@ int main(int argc, char *argv[])
     serv_adr.sin_addr.s_addr = inet_addr(argv[1]);
     serv_adr.sin_port = htons(atoi(argv[2]));
 
-    connect(sd, (struct sockaddr*)&serv_adr, sizeof(serv_adr));
+    if (connect(sd, (struct sockaddr*)&serv_adr, sizeof(serv_adr)) == -1)
+	error_handling("connect() error");
 
     int read_cnt;
     char buf[BUF_SIZE];
-    while((read_cnt = read(sd, buf, BUF_SIZE)) != 0)
+    while((read_cnt = read(sd, buf, BUF_SIZE)) != 0) // zero indicates end of file
 	fwrite((void*)buf, 1, read_cnt, fp);
 
-    puts("Received file data");
-    while (true)
-    {
-	puts("pre send ENDING_MSG");
-        int write_cnt = write(sd, ENDING_MSG, sizeof(ENDING_MSG));
-	puts("post send ENDING_MSG");
-	if (write_cnt > 0)
-	{
-	    printf("send \"%s\" to server\n", ENDING_MSG);
-	    break;
-	}
-	else
-	{
-	    printf("fail to send \"%s\" to server\n", ENDING_MSG);
-	}
-    }
+    printf("Received file data, file name: %s\n", FILE_NAME);
+    write(sd, ENDING_MSG, sizeof(ENDING_MSG));
 
     fclose(fp);
     close(sd);
-    puts("exit normally");
     return 0;
+}
+
+void error_handling(char *message)
+{
+    fputs(message, stderr);
+    fputc('\n', stderr);
+    exit(1);
 }

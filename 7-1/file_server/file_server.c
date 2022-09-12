@@ -18,6 +18,8 @@ int main(int argc, char *argv[])
 
     FILE *fp = fopen("file_server.c", "rb");
     int serv_sd = socket(PF_INET, SOCK_STREAM, 0);
+    if (serv_sd == -1)
+	error_handling("socket() error");
 
     struct sockaddr_in serv_adr;
     memset(&serv_adr, 0, sizeof(serv_adr));
@@ -25,12 +27,17 @@ int main(int argc, char *argv[])
     serv_adr.sin_addr.s_addr = htonl(INADDR_ANY);
     serv_adr.sin_port = htons(atoi(argv[1]));
 
-    bind(serv_sd, (struct sockaddr*)&serv_adr, sizeof(serv_adr));
-    listen(serv_sd, 5);
+    if (bind(serv_sd, (struct sockaddr*)&serv_adr, sizeof(serv_adr)) == -1)
+	error_handling("bind() error");
+
+    if (listen(serv_sd, 5) == -1)
+	error_handling("listen() error");
 
     struct sockaddr_in clnt_adr;
     socklen_t clnt_adr_sz = sizeof(clnt_adr);
     int clnt_sd = accept(serv_sd, (struct sockaddr*)&clnt_adr, &clnt_adr_sz);
+    if (clnt_sd == -1)
+	error_handling("accept() error");
 
     int read_cnt;
     char buf[BUF_SIZE];
@@ -55,4 +62,11 @@ int main(int argc, char *argv[])
     close(serv_sd);
 
     return 0;
+}
+
+void error_handling(char *message)
+{
+    fputs(message, stderr);
+    fputc('\n', stderr);
+    exit(1);
 }
