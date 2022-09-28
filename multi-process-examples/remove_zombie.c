@@ -6,12 +6,18 @@
 
 void read_childproc(int sig)
 {
+	puts("capture child exist signal");
+
 	int status;
 	pid_t id = waitpid(-1, &status, WNOHANG);
 	if (WIFEXITED(status))
 	{
 		printf("Removed proc id: %d\n", id);
 		printf("Child send %d\n", WEXITSTATUS(status));
+	}
+	else
+	{
+		printf("Get child proc (pid: %d) exited status failure\n", id);
 	}
 }
 
@@ -26,8 +32,8 @@ int main()
 	pid_t pid = fork();
 	if (pid == 0) // child process
 	{
-		puts("Hi! I'm a child process");
-		sleep(10);
+		puts("Hi! I'm child process 1");
+		sleep(8);
 		return 12;
 	}
 	else // father process
