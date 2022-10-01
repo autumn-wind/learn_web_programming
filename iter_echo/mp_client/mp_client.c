@@ -7,8 +7,8 @@
 
 #define BUF_SIZE 1024
 void error_handling(char *message);
-
-char message[BUF_SIZE];
+void read_routine(int sock, char *buf);
+void write_routine(int sock, char *buf);
 
 int main(int argc, char *argv[])
 {
@@ -32,21 +32,42 @@ int main(int argc, char *argv[])
 	else
 		puts("Connected...........");
 
-	while (1)
-	{
-		fputs("Input message(Q to quit): ", stdout);
-		fgets(message, BUF_SIZE, stdin);
+	char message[BUF_SIZE];
+	pid_t pid = fork();
+	if (pid == 0)
+	    write_routine(sock, message);
+	else
+	    read_routine(sock, message);
 
-		if (!strcmp(message, "q\n") || !strcmp(message, "Q\n"))
-			break;
-
-		write(sock, message, strlen(message));
-		int str_len = read(sock, message, BUF_SIZE - 1);
-		message[str_len] = 0;
-		printf("Message from server: %s\n", message);
-	}
 	close(sock);
 	return 0;
+}
+
+void read_routine(int sock, char *buf)
+{
+    while (1)
+    {
+	int str_len = read(sock, buf, BUF_SIZE - 1);
+	if (str_len == 0)
+	    return;
+
+	buf[str_len] = 0;
+	printf("Message from server: %s\n", buf);
+    }
+}
+
+void write_routine(int sock, char *buf)
+{
+    while (1)
+    {
+	fgets(buf, BUF_SIZE, stdin);
+	if (!strcmp(buf, "q\n") || !strcmp(buf, "Q\n"))
+	{
+	    shutdown(sock, SHUT_WR); // not elegant
+	    return;
+	}
+	write(sock, buf, strlen(buf));
+    }
 }
 
 void error_handling(char *message)
